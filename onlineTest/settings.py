@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'CPP'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 SITE_NAME = "程序设计类课程作业平台"
 CONTACT_INFO = "薛景老师（QQ群：230689474）"
@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'work',    #作业管理系统
     'faq',     #智能问答系统
     'process', #程序相似度计算
-    'qqlogin'  #QQ登录模块
+    'qqlogin', #QQ登录模块
+    'sign',    #签到功能    //powered by annhuny and meiko
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -94,6 +95,9 @@ DATABASES = {
         'PASSWORD': 'root',
         'HOST': '',
         'PORT': '',
+        'OPTIONS':{
+            "init_command": "SET foreign_key_checks = 0;",
+        }
     }
 }
 
@@ -120,7 +124,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
 
