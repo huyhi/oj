@@ -16,13 +16,14 @@ from auth_system.models import MyUser
 from work.models import BanJi
 
 class Event(models.Model):
-    teacher = models.ForeignKey(MyUser, on_delete = models.CASCADE)
-    banji = models.ForeignKey(BanJi, on_delete = models.CASCADE)
+    teacher = models.ForeignKey(MyUser, related_name = 'teacher', on_delete = models.CASCADE)
+    banji = models.ForeignKey(BanJi, related_name = 'banji', on_delete = models.CASCADE)
     position = models.CharField(max_length = 1024)
     has_signed_count = models.IntegerField()
     all_student_count = models.IntegerField()
     created_time = models.DateTimeField(auto_now = True)
     started_time = models.DateTimeField()
+    closed_time = models.DateTimeField()
 
 
 class Sign(models.Model):

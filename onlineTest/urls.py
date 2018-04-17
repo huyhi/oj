@@ -35,7 +35,7 @@ urlpatterns = [
     url(r'^$', TemplateView.as_view(template_name="index.html")),
     url(r'^qqlogin/', include('qqlogin.urls')),
     url(r'^teetest/', include('teetest.urls')),
-    url(r'^sign/', include('sign.urls')),    
+    url(r'^sign/', include('sign.urls')),
 ]
 
 handler403 = permission_denied

@@ -1,11 +1,30 @@
 {% extends 'base.html' %}
+
+
 {% block title %}{{ SITE_NAME }}{% endblock %}
+
+
 {% load staticfiles %}
 {% load static %}
+
+
 {% block extrastyle %}
 {% endblock %}
 
-{% block content %}
-    
-{% endblock %}
 
+
+{% block content %}
+    <h1> 美化的任务就交给前端大哥了 </h1>
+    {% for i in data %}
+        <div>
+            课程名称：<span>{{ i.banji__name }}</span> <br>            
+            创建时间：<span>{{ i.created_time }}</span> <br>  
+            应到人数：<span>{{ i.has_signed_count }}</span> <br>  
+            全部人数：<span>{{ i.all_student_count }}</span> <br>  
+            位置信息：<span>{{ i.position }}</span> <br>  
+            开始时间：<span>{{ i.started_time }}</span> <br>  
+            <a href="#">查看学生点名详情</a>    <br>  
+            <a href="#">删除</a>
+        </div>  <br>
+    {% endfor %}
+{% endblock %}
