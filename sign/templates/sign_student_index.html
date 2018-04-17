@@ -1,0 +1,150 @@
+{% extends 'base.html' %} 
+{% block title %}我的签到{% endblock %} 
+{% block extrahead %}
+    {% load static %}
+    <link href="{% static "assets/css/position.css" %}" rel="stylesheet">
+    <link href="{% static "assets/css/upload.css" %}" rel="stylesheet">
+    <script src="{% static "assets/js/upload.js" %}"></script>
+{% endblock %}
+
+{% block content %}
+<div id="allmap"></div>
+<div class="attend col-xs-10 col-md-2 col-lg-2 col-xs-offset-1 col-md-offset-2 col-lg-offset-1">
+    <h2>Sign-in</h2>
+    <div>
+        <span>Have been in class</span>
+        <button class="btn btn-primary" type="submit" onclick="attendance()" id="attend">Attend</button>
+    </div>
+    <div class="leave">
+        <span>Want to ask for leave</span>
+        <form action="" onsubmit="addMessage()">
+            <input type="text" class="form-control" placeholder="Please input your message" id="message">
+            <button type="submit" class="btn btn-info">Leave</button>
+            <a id="zwb_upload">
+                <input type="file" class="add" multiple>点击上传文件
+            </a>
+            <input type="text" name="filePath form-control" id="callbackPath2" hidden>
+        </form>
+    </div>
+</div>
+<div id="test" class="col-xs-10 col-md-8 col-lg-8 col-lg-offset-1 col-md-offset-1 col-xs-offset-1">
+    <table class="table table-stripe">
+        <tbody id="data">
+            <tr id="title" style="font-weight: 600">
+                <td>#</td>
+                <td>classTime</td>
+                <td>status</td>
+                <td>message</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    var map = new BMap.Map("allmap");
+    map.centerAndZoom("南京", 15); //初始化地图,设置城市和地图级别。
+    var pointA = new BMap.Point(118.936556, 32.114528); // 创建点坐标A--大渡口区
+
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function (r) {
+        if (this.getStatus() == BMAP_STATUS_SUCCESS) {
+            var mk = new BMap.Marker(r.point);
+            map.addOverlay(mk);
+            map.panTo(r.point);
+            console.log('Your Position: ' + r.point.lng + ',' + r.point.lat);
+            var pointB = new BMap.Point(r.point.lng, r.point.lat);
+            //pointB 为根据定位设置出的位置
+            var length = (map.getDistance(pointA, pointB)).toFixed(2);
+            console.log('Length：' + (length + ' 米。'));
+            //获取两点距离,保留小数点后两位
+            var polyline = new BMap.Polyline([pointA, pointB], {
+                strokeColor: "blue",
+                strokeWeight: 6,
+                strokeOpacity: 0.5
+            });
+            //定义折线
+            return len = length;
+        } else {
+            alert('failed' + this.getStatus());
+        }
+
+    }, {
+        enableHighAccuracy: true
+    });
+
+    var len;
+
+    function attendance() {
+        $.getJSON("tsconfig.json", function (json) {
+            if (len >= 200000) {
+                json.user[0].Attendance[0].att = false;
+                alert("签到失败");
+                alert(json.user[0].Attendance[0].att);
+            } else if (len < 200000) {
+                json.user[0].Attendance[0].att = true;
+                alert("签到成功");
+                console.log(json.user[0].Attendance[0].att);
+                json.user[0].allTimes++;
+                $(document).ready(function () {
+                    $("#attend").text("已签到").attr("disabled", "disabled")
+                })
+            }
+        });
+    }
+
+    function addMessage() {
+        var message = document.getElementById("message").value;
+        if (message == "" || message == null) {
+            alert("Please input the reason")
+        } else {
+            $.getJSON("tsconfig.json", function (json) {
+                json.user[0].Attendance[0].message = message;
+                console.log(message);
+            })
+        }
+    }
+
+    //服务器端成功返回 {state:1,path:文件保存路径}
+    //服务器端失败返回 {state:0,errmsg:错误原因}
+    //默认做了文件名不能含有中文,后端接收文件的变量名为file
+    $("#zwb_upload").bindUpload({
+        url: "/img", //上传服务器地址
+        callbackPath: "#callbackPath2", //绑定上传成功后 图片地址的保存容器的id或者class 必须为input或者textarea等可以使用$(..).val()设置之的表单元素
+        // ps:值返回上传成功的 默认id为#callbackPath  保存容器为位置不限制,id需要加上#号,class需要加上.
+        // 返回格式为:
+        // 原来的文件名,服务端保存的路径|原来的文件名,服务端保存的路径|原来的文件名,服务端保存的路径|原来的文件名,服务端保存的路径....
+        num: 10, //上传数量的限制 默认为空 无限制
+        type: "jpg|png|gif|svg", //上传文件类型 默认为空 无限制
+        size: 3 //上传文件大小的限制,默认为5单位默认为mb
+    });
+
+    $.getJSON('package.json', function (json) {
+        for (let user of json.user) {
+            var num = user.Num;
+            var classTime = user.classTime;
+            var status = user.status;
+            var message = user.message;
+            console.log(user);
+
+            let template =
+                `<tr>
+                                          <td>${num}</td>
+                                          <td>${classTime}</td>
+                                          <td>${status}</td>`;
+
+            if (message === "note") {
+                template += `<td><a>${message}</a></td>
+                                      </tr>`
+            } else if (message === "none") {
+                template += `<td>${message}(Skipping)</td>
+                                      </tr>`
+            } else if (message === " ") {
+                template += `<td>${message}</td>
+                                      </tr>`
+            }
+
+            document.getElementById('data').innerHTML += template;
+        }
+    })
+</script>
+{% endblock %}

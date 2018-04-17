@@ -4,14 +4,11 @@ from sign.models import Event
 import datetime
 from django.views.decorators.csrf import csrf_exempt
 
-def index(request):
-    return JsonResponse({
-        'success': True,
-        'errMsg': None,
-        'statement': 'ojbk',
-        'userId': request.user.username
-    })
+def teacher_index(request):
+    return render(request, "sign_teacher_index.html")
 
+def student_index(request):
+    return render(request, "sign_student_index.html")
 
 @csrf_exempt
 def startSign(request):
