@@ -1,6 +1,6 @@
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Count
-from sign.models import Event
+from sign.models import Event, Sign
 from work.models import BanJi
 from django.shortcuts import render
 from django.core.paginator import Paginator, EmptyPage
@@ -13,9 +13,9 @@ def teacher_index(request):
     user = request.user
 
     if request.method == 'GET' and user.is_admin:    
-        page = request.GET.get('page', 1)
+        page = int(request.GET.get('page', 1))
 
-        signList = Event.objects.all().filter(teacher_id = 1).prefetch_related('banji').values(
+        signList = Event.objects.all().filter(teacher_id = user.id).prefetch_related('banji').values(
             'position', 'has_signed_count', 'all_student_count', 'created_time', 'started_time', 'closed_time', 'banji__name'
         )
 
@@ -38,6 +38,7 @@ def teacher_index(request):
 
 TODO
 ！安全隐患！
+需要增加用户验证的中间件。。。。具体怎么在Django实现我还在查看文档。。。。
 由于测试方便，这里暂时禁用了CSRF，后续需要启用CSRF防御机制
 """
 
@@ -60,7 +61,6 @@ def create(request):
             banji_id = banjiId,
             teacher_id = user.id
         )
-
         return JsonResponse({
             'success': True,
             'errMsg': None,
@@ -74,8 +74,26 @@ def create(request):
         })
         
 
-# @csrf_exempt
-# def create(request):
+def detail(request, eventId):
+
+    page = int(request.GET.get('page', 1))
+
+    # studentsList = Sign.objects.filter(event = eventId).prefetch_related('user').values()
+    studentsList = Sign.objects.filter(event = eventId).prefetch_related('user').values(
+        'user__username', 'created_time'
+    )
+
+    # @10 items per page, use query params page
+    perPage = Paginator(studentsList, 10)     
+    try:
+        data = perPage.page(page)   
+    except EmptyPage:
+        data = perPage.page(perPage.num_pages)
+
+    return render(request, "sign_detail.html", {
+        'data': data
+    })
+    # return HttpResponse(studentsList)
 
 
 
