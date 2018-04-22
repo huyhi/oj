@@ -30,6 +30,3 @@ class Sign(models.Model):
     event = models.ForeignKey(Event, on_delete = models.CASCADE)
     user = models.ForeignKey(MyUser, on_delete = models.CASCADE)
     created_time = models.DateTimeField(auto_now = True)
-    
-    class Meta:
-        db_table = 'signs'

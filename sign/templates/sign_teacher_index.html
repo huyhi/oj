@@ -1,30 +1,49 @@
 {% extends 'base.html' %}
 
-
-{% block title %}{{ SITE_NAME }}{% endblock %}
-
-
-{% load staticfiles %}
-{% load static %}
-
-
-{% block extrastyle %}
+{% block title %}
+    我的作业列表
 {% endblock %}
 
-
+{% block extrahead %}
+    {% load static %}
+    <script src="{% static 'assets/js/bootstrap-table.min.js' %}"></script>
+    <link href="{% static 'assets/css/bootstrap-table.min.css' %}" rel="stylesheet">
+    <script src="{% static 'assets/js/bootstrap-table-zh-CN.min.js' %}"></script>
+{% endblock %}
 
 {% block content %}
-    <h1> 美化的任务就交给前端大哥了 </h1>
-    {% for i in data %}
-        <div>
-            课程名称：<span>{{ i.banji__name }}</span> <br>            
-            创建时间：<span>{{ i.created_time }}</span> <br>  
-            应到人数：<span>{{ i.has_signed_count }}</span> <br>  
-            全部人数：<span>{{ i.all_student_count }}</span> <br>  
-            位置信息：<span>{{ i.position }}</span> <br>  
-            开始时间：<span>{{ i.started_time }}</span> <br>  
-            <a href="#">查看学生点名详情</a>    <br>  
-            <a href="#">删除</a>
-        </div>  <br>
-    {% endfor %}
+    <ol class="breadcrumb">
+        <li><a href="{% url 'index' %}">主页</a></li>
+        <li class="active">签到管理</li>
+        <li class="active">布置签到</li>
+    </ol>
+
+    <h1>我的点名记录</h1>
+
+    <div class="table-responsive">
+        <table class="table">
+            <tr>
+                <th>课程名称</th>
+                <th>签到人数</th>
+                <th>全部人数</th>
+                <th>位置信息</th>
+                <th>开始时间</th>
+                <th>结束时间</th>
+                <th>操作</th>
+            </tr>
+
+            {% for i in data %}
+                <tr>
+                    <th>{{ i.banji__name }}</th>
+                    <th>{{ i.has_signed_count }}</th>
+                    <th>{{ i.all_student_count }}</th>
+                    <th>{{ i.position }}</th>
+                    <th>{{ i.started_time }}</th>
+                    <th>{{ i.closed_time }}</th>
+                    <th>edit, more, delete</th>
+                </tr>
+            {% endfor %}
+
+        </table>
+    </div>
 {% endblock %}
