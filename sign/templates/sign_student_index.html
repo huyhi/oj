@@ -1,5 +1,9 @@
-{% extends 'base.html' %} 
-{% block title %}我的签到{% endblock %} 
+{% extends 'base.html' %}
+
+{% block title %}
+    我的签到
+{% endblock %}
+
 {% block extrahead %}
     {% load static %}
     <link href="{% static "assets/css/position.css" %}" rel="stylesheet">
@@ -8,15 +12,18 @@
 {% endblock %}
 
 {% block content %}
-<div id="allmap"></div>
-<div class="attend col-xs-10 col-md-2 col-lg-2 col-xs-offset-1 col-md-offset-2 col-lg-offset-1">
-    <h2>Sign-in</h2>
-    <div>
-        <span>Have been in class</span>
+    <ol class="breadcrumb">
+        <li><a href="{% url 'index' %}">主页</a></li>
+        <li class="active">签到管理</li>
+        <li class="active">我的签到</li>
+    </ol>
+
+    <div class="attend">
+        <h1>我的点名记录</h1>
+        <div id="allmap"></div>
+        <h3>签到</h3>
         <button class="btn btn-primary" type="submit" onclick="attendance()" id="attend">Attend</button>
-    </div>
-    <div class="leave">
-        <span>Want to ask for leave</span>
+        <h3>请假</h3>
         <form action="" onsubmit="addMessage()">
             <input type="text" class="form-control" placeholder="Please input your message" id="message">
             <button type="submit" class="btn btn-info">Leave</button>
@@ -26,19 +33,19 @@
             <input type="text" name="filePath form-control" id="callbackPath2" hidden>
         </form>
     </div>
-</div>
-<div id="test" class="col-xs-10 col-md-8 col-lg-8 col-lg-offset-1 col-md-offset-1 col-xs-offset-1">
-    <table class="table table-stripe">
-        <tbody id="data">
-            <tr id="title" style="font-weight: 600">
-                <td>#</td>
-                <td>classTime</td>
-                <td>status</td>
-                <td>message</td>
-            </tr>
-        </tbody>
-    </table>
-</div>
+
+    <div id="test">
+        <table class="table table-stripe">
+            <tbody id="data">
+                <tr id="title" style="font-weight: 600">
+                    <td>#</td>
+                    <td>classTime</td>
+                    <td>status</td>
+                    <td>message</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
 <script>
     var map = new BMap.Map("allmap");
@@ -117,34 +124,5 @@
         type: "jpg|png|gif|svg", //上传文件类型 默认为空 无限制
         size: 3 //上传文件大小的限制,默认为5单位默认为mb
     });
-
-    $.getJSON('package.json', function (json) {
-        for (let user of json.user) {
-            var num = user.Num;
-            var classTime = user.classTime;
-            var status = user.status;
-            var message = user.message;
-            console.log(user);
-
-            let template =
-                `<tr>
-                                          <td>${num}</td>
-                                          <td>${classTime}</td>
-                                          <td>${status}</td>`;
-
-            if (message === "note") {
-                template += `<td><a>${message}</a></td>
-                                      </tr>`
-            } else if (message === "none") {
-                template += `<td>${message}(Skipping)</td>
-                                      </tr>`
-            } else if (message === " ") {
-                template += `<td>${message}</td>
-                                      </tr>`
-            }
-
-            document.getElementById('data').innerHTML += template;
-        }
-    })
 </script>
 {% endblock %}
