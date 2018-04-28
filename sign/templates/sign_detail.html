@@ -15,7 +15,7 @@
     <ol class="breadcrumb">
         <li><a href="{% url 'index' %}">主页</a></li>
         <li class="active">签到管理</li>
-        <li class="active">布置签到</li>
+        <li class="active">查看详情</li>
     </ol>
 
     <h1>我的点名记录</h1>
@@ -23,24 +23,16 @@
     <div class="table-responsive">
         <table class="table">
             <tr>
-                <th>课程名称</th>
-                <th>签到人数</th>
-                <th>全部人数</th>
-                <th>位置信息</th>
-                <th>开始时间</th>
-                <th>结束时间</th>
-                <th>操作</th>
+                <th>学生姓名</th>
+                <th>签到时间</th>
+                <th>备注</th>
             </tr>
 
             {% for i in data %}
                 <tr>
-                    <th>{{ i.banji__name }}</th>
-                    <th>{{ i.has_signed_count }}</th>
-                    <th>{{ i.all_student_count }}</th>
-                    <th>{{ i.position }}</th>
-                    <th>{{ i.started_time }}</th>
-                    <th>{{ i.closed_time }}</th>
-                    <th>edit, more, delete</th>
+                    <th>{{ i.user__username }}</th>
+                    <th>{{ i.created_time }}</th>
+                    <th>备注</th>
                 </tr>
             {% endfor %}
 
