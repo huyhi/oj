@@ -41,7 +41,6 @@ TODO
 需要增加用户验证的中间件。。。。具体怎么在Django实现我还在查看文档。。。。
 由于测试方便，这里暂时禁用了CSRF，后续需要启用CSRF防御机制
 """
-
 @csrf_exempt
 def create(request):
 
@@ -61,9 +60,9 @@ def create(request):
             banji_id = banjiId,
             teacher_id = user.id
         )
+
         return JsonResponse({
             'success': True,
-            'errMsg': None,
             'position': request.POST.get('position')
         })
 
@@ -72,10 +71,24 @@ def create(request):
             'success': False,
             'errMsg': 'Permission denied'
         })
-        
+
+
+@csrf_exempt
+def delete(request, eventId):
+    Event.objects.filter(id = int(eventId)).delete()
+    return JsonResponse({'success': True})
+
+
+@csrf_exempt
+def edit(request, eventId):
+    Event.objects.filter(id = int(eventId)).update(
+        started_time = request.POST.get('started_time'),
+        closed_time = request.POST.get('closed_time')        
+    )
+    return JsonResponse({'success': True})
+
 
 def detail(request, eventId):
-
     page = int(request.GET.get('page', 1))
 
     studentsList = Sign.objects.filter(event = eventId).prefetch_related('user').values(
@@ -104,11 +117,11 @@ def student_index(request):
     cursor = connection.cursor()
 
     ongoingSQL = '\
-        select e.* \
+        select e.*, tmp.name\
         from sign_event AS e\
         join \
         (\
-            select bj_mid.banji_id \
+            select bj_mid.banji_id, bj.name\
             from work_banji_students AS bj_mid\
             join work_banji AS bj\
             on bj_mid.banji_id = bj.id and bj_mid.myuser_id = %d\
@@ -117,10 +130,51 @@ def student_index(request):
         on e.banji_id = tmp.banji_id\
         where now() between e.started_time and e.closed_time\
     ' % userId
-
     cursor.execute(ongoingSQL)
     data['onGoing'] = cursor.fetchall()
 
-    checkedSQL = ''
+    checkedSQL = '\
+        select s.*, bj.name\
+        from sign_sign AS s\
+        join sign_event AS e\
+        on s.event_id = e.id\
+        join work_banji AS bj\
+        on bj.id = e.banji_id\
+        where user_id = %d\
+    ' % userId
+    cursor.execute(checkedSQL)
+    data['checked'] = cursor.fetchall()
+
+    # return render(request, "sign_student_index.html", {
+    #     'data': data
+    # })
 
     return JsonResponse(data)
+
+
+# 签到的动作
+# 1,中间表增加一条记录
+# 2,人数++
+# 3,验证码可能稳一点
+@csrf_exempt
+def checkout(request, eventId):
+
+    eventId = int(eventId)
+    event = Event.objects.get(id = eventId)
+    event.has_signed_count = event.has_signed_count + 1
+    event.save()
+
+    Sign.objects.create(
+        event_id = eventId,
+        user_id = request.user.id,
+        created_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    )
+
+    return JsonResponse({'success': True})
+    # return HttpResponse(eventId)
+
+
+
+@csrf_exempt
+def upload(request, eventId):
+    pass
