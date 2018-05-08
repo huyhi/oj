@@ -5,3 +5,4 @@ work/templatetags/__pycache__/
 onlineTest/settings.py
 .idea/
 .DS_Store/
+django_uwsgi.ini

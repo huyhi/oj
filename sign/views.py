@@ -1,4 +1,5 @@
 from django.http import JsonResponse, HttpResponse
+from django.db import connection
 from django.db.models import Count
 from sign.models import Event, Sign
 from work.models import BanJi
@@ -35,7 +36,6 @@ def teacher_index(request):
 教师创建点名的路由 Http Method POST
 必要参数：banji_id，position详细信息
 可选参数：started_time，预约点名开始的时间，如不填则默认现在
-
 TODO
 ！安全隐患！
 需要增加用户验证的中间件。。。。具体怎么在Django实现我还在查看文档。。。。
@@ -78,7 +78,6 @@ def detail(request, eventId):
 
     page = int(request.GET.get('page', 1))
 
-    # studentsList = Sign.objects.filter(event = eventId).prefetch_related('user').values()
     studentsList = Sign.objects.filter(event = eventId).prefetch_related('user').values(
         'user__username', 'created_time'
     )
@@ -93,10 +92,35 @@ def detail(request, eventId):
     return render(request, "sign_detail.html", {
         'data': data
     })
-    # return HttpResponse(studentsList)
 
 
 
-
+#感觉 Django 的 orm 模型很别扭，不习惯
+@csrf_exempt
 def student_index(request):
-    return render(request, "sign_student_index.html")
+
+    userId = request.user.id
+    data = {}
+    cursor = connection.cursor()
+
+    ongoingSQL = '\
+        select e.* \
+        from sign_event AS e\
+        join \
+        (\
+            select bj_mid.banji_id \
+            from work_banji_students AS bj_mid\
+            join work_banji AS bj\
+            on bj_mid.banji_id = bj.id and bj_mid.myuser_id = %d\
+            where now() between bj.start_time and bj.end_time\
+        ) AS tmp\
+        on e.banji_id = tmp.banji_id\
+        where now() between e.started_time and e.closed_time\
+    ' % userId
+
+    cursor.execute(ongoingSQL)
+    data['onGoing'] = cursor.fetchall()
+
+    checkedSQL = ''
+
+    return JsonResponse(data)
