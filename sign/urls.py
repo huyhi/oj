@@ -10,5 +10,5 @@ urlpatterns = [
 
     url(r'^student_sign$', views.student_index, name='sign.student.index'),
     url(r'^checkout/(\d+)$', views.checkout, name='sign.checkout'),
-    url(r'^upload/(\d+)$', views.upload, name='sign.upload'),
+    url(r'^leave/(\d+)$', views.leave, name='sign.leave'),
 ]

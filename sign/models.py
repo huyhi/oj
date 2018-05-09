@@ -29,4 +29,11 @@ class Event(models.Model):
 class Sign(models.Model):
     event = models.ForeignKey(Event, on_delete = models.CASCADE)
     user = models.ForeignKey(MyUser, on_delete = models.CASCADE)
+    status = models.SmallIntegerField(default = 0, editable = False)
     created_time = models.DateTimeField(auto_now = True)
+
+
+class Leave(models.Model):
+    sign = models.ForeignKey(Sign, on_delete = models.CASCADE)
+    user = models.ForeignKey(MyUser, on_delete = models.CASCADE)
+    path = models.CharField(max_length = 512)

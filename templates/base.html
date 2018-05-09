@@ -147,17 +147,20 @@
                             </ul>
                         </li>
                     {% endif %}
+                {% endif %}
                     <li class="sub-meun">
                         <a href="javascript:;" id="sign_manage">
                             <i class="fa fa-cogs"></i>
                             <span>签到管理</span>
                         </a>
                         <ul class="sub" id="sign_user_manage">
-                            <li id="sign_teacher_manage" style="padding-left: 32px"><a href="{% url 'sign.teacher.index' %}">签到布置</a></li>
-                            <li id="sign_student_manage" style="padding-left: 32px"><a href="{% url 'sign.student.index' %}">我的签到</a></li>
+                            {% if user.is_superuser %}
+                                <li id="sign_teacher_manage" style="padding-left: 32px"><a href="{% url 'sign.teacher.index' %}">签到布置</a></li>
+                            {% else %}
+                                <li id="sign_student_manage" style="padding-left: 32px"><a href="{% url 'sign.student.index' %}">我的签到</a></li>
+                            {% endif %}
                         </ul>
                     </li>
-                {% endif %}
                 <li class="sub-menu">
                     <a href="javascript:;">
                         <i class="fa fa-user" aria-hidden="true"></i>

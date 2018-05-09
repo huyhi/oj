@@ -1,13 +1,16 @@
 from django.http import JsonResponse, HttpResponse
 from django.db import connection
 from django.db.models import Count
-from sign.models import Event, Sign
+from sign.models import Event, Sign, Leave
 from work.models import BanJi
 from django.shortcuts import render
 from django.core.paginator import Paginator, EmptyPage
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta
-
+from onlineTest.settings import BASE_DIR
+import os.path
+import uuid
+import mimetypes
 
 def teacher_index(request):
 
@@ -111,13 +114,12 @@ def detail(request, eventId):
 #感觉 Django 的 orm 模型很别扭，不习惯
 @csrf_exempt
 def student_index(request):
-
     userId = request.user.id
     data = {}
     cursor = connection.cursor()
 
     ongoingSQL = '\
-        select e.*, tmp.name\
+        select tmp.name, e.started_time, e.closed_time\
         from sign_event AS e\
         join \
         (\
@@ -134,7 +136,7 @@ def student_index(request):
     data['onGoing'] = cursor.fetchall()
 
     checkedSQL = '\
-        select s.*, bj.name\
+        select bj.name, s.created_time\
         from sign_sign AS s\
         join sign_event AS e\
         on s.event_id = e.id\
@@ -145,9 +147,10 @@ def student_index(request):
     cursor.execute(checkedSQL)
     data['checked'] = cursor.fetchall()
 
-    # return render(request, "sign_student_index.html", {
-    #     'data': data
-    # })
+    return render(request, "sign_student_index.html", {
+        'onGoing': data['onGoing'],
+        'checked': data['checked']
+    })
 
     return JsonResponse(data)
 
@@ -166,15 +169,46 @@ def checkout(request, eventId):
 
     Sign.objects.create(
         event_id = eventId,
-        user_id = request.user.id,
-        created_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        user_id = request.user.id
     )
 
     return JsonResponse({'success': True})
-    # return HttpResponse(eventId)
-
 
 
 @csrf_exempt
-def upload(request, eventId):
-    pass
+def leave(request, eventId):
+    userId = request.user.id
+    fileObj = request.FILES.get('leaveAsk')
+
+    date = datetime.now().strftime('%Y/%m/%d/')
+    pathdir = os.path.join(BASE_DIR, 'static', 'pic', date)
+    if not os.path.exists(pathdir):
+        os.makedirs(pathdir)
+    
+    filepath = os.path.join(pathdir, str(uuid.uuid1()))
+    f = open(filepath, 'wb')
+    for chunk in fileObj.chunks():
+        f.write(chunk)
+    f.close()
+
+    eventId = int(eventId)
+    event = Event.objects.get(id = eventId)
+    event.has_signed_count = event.has_signed_count + 1
+    event.save()
+
+    Sign.objects.create(
+        event_id = eventId,
+        user_id = userId,
+        status = 1
+    )
+
+    Leave.objects.create(
+        event_id = eventId,
+        user_id = userId,
+        path = os.path.join('pic', date)
+    )
+
+    return JsonResponse({
+        'success': True,
+        'path': filepath
+    })
