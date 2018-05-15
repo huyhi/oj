@@ -1,4 +1,5 @@
 from django.http import JsonResponse, HttpResponse
+import os.path, uuid
 from django.db import connection
 from django.db.models import Count
 from sign.models import Event, Sign, Leave
@@ -8,12 +9,9 @@ from django.core.paginator import Paginator, EmptyPage
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta
 from onlineTest.settings import BASE_DIR
-import os.path
-import uuid
-import mimetypes
+from mimetypes import MimeTypes
 
 def teacher_index(request):
-
     user = request.user
 
     if request.method == 'GET' and user.is_admin:    
@@ -46,7 +44,6 @@ TODO
 """
 @csrf_exempt
 def create(request):
-
     user = request.user
 
     if request.method == 'POST' and user.is_admin:   #judge HTTP method and user identity
@@ -112,7 +109,6 @@ def detail(request, eventId):
 
 
 #感觉 Django 的 orm 模型很别扭，不习惯
-@csrf_exempt
 def student_index(request):
     userId = request.user.id
     data = {}
@@ -152,8 +148,6 @@ def student_index(request):
         'checked': data['checked']
     })
 
-    return JsonResponse(data)
-
 
 # 签到的动作
 # 1,中间表增加一条记录
@@ -161,8 +155,8 @@ def student_index(request):
 # 3,验证码可能稳一点
 @csrf_exempt
 def checkout(request, eventId):
-
     eventId = int(eventId)
+
     event = Event.objects.get(id = eventId)
     event.has_signed_count = event.has_signed_count + 1
     event.save()
@@ -178,37 +172,38 @@ def checkout(request, eventId):
 @csrf_exempt
 def leave(request, eventId):
     userId = request.user.id
+    eventId = int(eventId)
+
     fileObj = request.FILES.get('leaveAsk')
 
-    date = datetime.now().strftime('%Y/%m/%d/')
-    pathdir = os.path.join(BASE_DIR, 'static', 'pic', date)
+    #检测文件后缀名和 MINE 格式
+    #TODO
+    #暂时还不知道 怎么判断上传文件的 MINE 类型，目前只根据后缀检查一下
+    if os.path.splitext(fileObj.name)[1].lower() not in ('.jpg', '.jpeg', 'png'):
+        return JsonResponse({'success': False, 'code': 510, 'msg': 'upload file can only be .jpg .jpeg .png'})
+
+    date = datetime.now().strftime('%Y/%m/%d/').split('/')
+    pathdir = os.path.join(BASE_DIR, 'static', 'pic', date[0], date[1], date[2])
     if not os.path.exists(pathdir):
         os.makedirs(pathdir)
     
-    filepath = os.path.join(pathdir, str(uuid.uuid1()))
-    f = open(filepath, 'wb')
+    fileName = str(uuid.uuid1())
+    f = open(os.path.join(pathdir, fileName), 'wb')
     for chunk in fileObj.chunks():
         f.write(chunk)
     f.close()
 
-    eventId = int(eventId)
     event = Event.objects.get(id = eventId)
     event.has_signed_count = event.has_signed_count + 1
     event.save()
 
-    Sign.objects.create(
-        event_id = eventId,
-        user_id = userId,
-        status = 1
-    )
+    signObj = Sign(event_id = eventId, user_id = userId, status = 1)
+    signObj.save()
 
     Leave.objects.create(
-        event_id = eventId,
-        user_id = userId,
-        path = os.path.join('pic', date)
+        sign_id = signObj.id,
+        path = os.path.join('pic', date[0], date[1], date[2], fileName),
+        cause = request.POST.get('cause')
     )
 
-    return JsonResponse({
-        'success': True,
-        'path': filepath
-    })
+    return JsonResponse({'success': True, 'path': os.path.splitext(fileObj.name)})

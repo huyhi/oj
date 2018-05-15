@@ -35,5 +35,5 @@ class Sign(models.Model):
 
 class Leave(models.Model):
     sign = models.ForeignKey(Sign, on_delete = models.CASCADE)
-    user = models.ForeignKey(MyUser, on_delete = models.CASCADE)
+    cause = models.CharField(default = 'null', max_length = 255)
     path = models.CharField(max_length = 512)
