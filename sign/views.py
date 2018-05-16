@@ -1,8 +1,9 @@
-from django.http import JsonResponse, HttpResponse
 import os.path, uuid
+from django.http import JsonResponse, HttpResponse
 from django.db import connection
 from django.db.models import Count
 from sign.models import Event, Sign, Leave
+from auth_system.models import MyUser
 from work.models import BanJi
 from django.shortcuts import render
 from django.core.paginator import Paginator, EmptyPage
@@ -18,7 +19,7 @@ def teacher_index(request):
         page = int(request.GET.get('page', 1))
 
         signList = Event.objects.all().filter(teacher_id = user.id).prefetch_related('banji').values(
-            'position', 'has_signed_count', 'all_student_count', 'created_time', 'started_time', 'closed_time', 'banji__name'
+            'has_signed_count', 'all_student_count', 'created_time', 'started_time', 'closed_time', 'banji__name'
         )
 
         # @10 items per page, use query params page
@@ -48,24 +49,20 @@ def create(request):
 
     if request.method == 'POST' and user.is_admin:   #judge HTTP method and user identity
 
-        banjiId = int(request.POST.get('banji_id'))
+        banjiId = int(request.POST.get('banjiId'))
         timeNow = datetime.now()
 
         Event.objects.create(
             position = request.POST.get('position'),    #点名发起的位置，以此来判断学生是否在指定范围内签到
             has_signed_count = 0,
             all_student_count = BanJi.objects.get(id = banjiId).students.count(),
-            started_time = request.POST.get('started_time', timeNow.strftime('%Y-%m-%d %H:%M:%S')),     #点名开始的时间，可自定义
-            closed_time = request.POST.get('closed_time', (timeNow + timedelta(minutes = 10)).strftime('%Y-%m-%d %H:%M:%S')),    #点名结束的时间，默认10min的点名期限
+            started_time = request.POST.get('startedTime', timeNow.strftime('%Y-%m-%d %H:%M:%S')),     #点名开始的时间，可自定义
+            closed_time = request.POST.get('closedTime', (timeNow + timedelta(minutes = 10)).strftime('%Y-%m-%d %H:%M:%S')),    #点名结束的时间，默认10min的点名期限
             banji_id = banjiId,
             teacher_id = user.id
         )
 
-        return JsonResponse({
-            'success': True,
-            'position': request.POST.get('position')
-        })
-
+        return JsonResponse({'success': True})
     else:
         return JsonResponse({
             'success': False,
@@ -91,8 +88,8 @@ def edit(request, eventId):
 def detail(request, eventId):
     page = int(request.GET.get('page', 1))
 
-    studentsList = Sign.objects.filter(event = eventId).prefetch_related('user').values(
-        'user__username', 'created_time'
+    studentsList = Sign.objects.filter(event = eventId).prefetch_related('user', 'leave').values(
+        'user__username', 'created_time', 'leave__cause', 'leave__path'
     )
 
     # @10 items per page, use query params page
@@ -111,11 +108,10 @@ def detail(request, eventId):
 #感觉 Django 的 orm 模型很别扭，不习惯
 def student_index(request):
     userId = request.user.id
-    data = {}
     cursor = connection.cursor()
 
     ongoingSQL = '\
-        select tmp.name, e.started_time, e.closed_time\
+        select e.id, tmp.name, e.started_time, e.closed_time\
         from sign_event AS e\
         join \
         (\
@@ -129,7 +125,7 @@ def student_index(request):
         where now() between e.started_time and e.closed_time\
     ' % userId
     cursor.execute(ongoingSQL)
-    data['onGoing'] = cursor.fetchall()
+    onGoing = list(map(lambda x: dict(zip(['id', 'name', 'startTime', 'closedTime'], x)), cursor.fetchall()))[0]
 
     checkedSQL = '\
         select bj.name, s.created_time\
@@ -141,18 +137,15 @@ def student_index(request):
         where user_id = %d\
     ' % userId
     cursor.execute(checkedSQL)
-    data['checked'] = cursor.fetchall()
+    checked = list(map(lambda x: dict(zip(['name', 'createdTime'], x)) ,cursor.fetchall()))
 
     return render(request, "sign_student_index.html", {
-        'onGoing': data['onGoing'],
-        'checked': data['checked']
+        'onGoing': onGoing,
+        'checked': checked
     })
 
 
-# 签到的动作
-# 1,中间表增加一条记录
-# 2,人数++
-# 3,验证码可能稳一点
+# 学生主动签到的动作
 @csrf_exempt
 def checkout(request, eventId):
     eventId = int(eventId)
@@ -165,7 +158,25 @@ def checkout(request, eventId):
         event_id = eventId,
         user_id = request.user.id
     )
+    return JsonResponse({'success': True})
 
+
+
+#老师手动输入学号帮助学生签到
+@csrf_exempt
+def supplement(request, eventId):
+    eventId = int(eventId)
+    studentId = request.POST.get('studentId')
+
+    try:
+        userObj = MyUser.objects.get(id_num = studentId)
+    except:
+        return JsonResponse({'success': False, 'code': 404, 'msg': 'can not find user by studentId'})
+
+    Sign.objects.create(
+        event_id = eventId,
+        user_id = studentId
+    )
     return JsonResponse({'success': True})
 
 

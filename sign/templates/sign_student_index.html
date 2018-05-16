@@ -12,24 +12,28 @@
 {% endblock %}
 
 {% block content %}
-    正在进行中
-    <div class="table-responsive">
-        <table class="table">
-            <tr>
-                <th>课程名称</th>
-                <th>开始时间</th>
-                <th>截止时间</th>
-            </tr>
-
-            {% for i in onGoing %}
+    {% if onGoing %}
+        正在进行中
+        <div class="table-responsive">
+            <table class="table">
                 <tr>
-                    {% for i_ in i%}    
-                        <th>{{ i_ }}</th>
-                    {% endfor %}
+                    <th>课程名称</th>
+                    <th>开始时间</th>
+                    <th>截止时间</th>
                 </tr>
-            {% endfor %}
-        </table>
-    </div>
+
+                <tr>
+                    <th>{{ onGoing.name }}</th>
+                    <th>{{ onGoing.startTime }}</th>
+                    <th>{{ onGoing.closedTime }}</th>
+                </tr>
+
+            </table>
+        </div>
+    {% else %}
+        暂时没有正在进行中的签到
+    {% endif %}
+
 
     签到记录
     <div class="table-responsive">
@@ -40,19 +44,11 @@
             </tr>
 
             {% for i in checked %}
-                <tr>
-                    {% for i_ in i%}    
-                        <th>{{ i_ }}</th>
-                    {% endfor %}
-                </tr>
+                <th>{{ i.name }}</th>
+                <th>{{ i.createdTime }}</th>                   
             {% endfor %}
         </table>
     </div>
-
-
-
-
-
 
 
     <ol class="breadcrumb">

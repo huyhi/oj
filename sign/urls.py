@@ -7,6 +7,7 @@ urlpatterns = [
     url(r'^detail/(\d+)$', views.detail, name='sign.detail'),
     url(r'^edit/(\d+)$', views.edit, name='sign.edit'),
     url(r'^delete/(\d+)$', views.delete, name='sign.delete'),    
+    url(r'^supplement/(\d+)$', views.supplement, name='sign.supplement'),    
 
     url(r'^student_sign$', views.student_index, name='sign.student.index'),
     url(r'^checkout/(\d+)$', views.checkout, name='sign.checkout'),

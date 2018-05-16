@@ -24,7 +24,7 @@
         <table class="table">
             <tr>
                 <th>学生姓名</th>
-                <th>签到时间</th>
+                <th>签到时间</th>           
                 <th>备注</th>
             </tr>
 
@@ -32,7 +32,11 @@
                 <tr>
                     <th>{{ i.user__username }}</th>
                     <th>{{ i.created_time }}</th>
-                    <th>备注</th>
+                    {% if i.leave__cause %}
+                        <th>{{ i.leave__cause }} <br> <img src="{% static i.leave__path %}"> </th>
+                    {% else %}
+                        <th>无</th>
+                    {% endif %}
                 </tr>
             {% endfor %}
 
