@@ -10,7 +10,6 @@ from django.core.paginator import Paginator, EmptyPage
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta
 from onlineTest.settings import BASE_DIR
-from mimetypes import MimeTypes
 
 def teacher_index(request):
     user = request.user
@@ -71,8 +70,7 @@ def create(request):
         )
         return JsonResponse({'success': True})
     else:
-        return JsonResponse({
-            'success': False, 'errMsg': 'Permission denied'})
+        return JsonResponse({'success': False, 'errMsg': 'Permission denied'})
 
 
 @csrf_exempt
@@ -81,13 +79,13 @@ def delete(request, eventId):
     return JsonResponse({'success': True})
 
 
-@csrf_exempt
-def edit(request, eventId):
-    Event.objects.filter(id = int(eventId)).update(
-        started_time = request.POST.get('started_time'),
-        closed_time = request.POST.get('closed_time')        
-    )
-    return JsonResponse({'success': True})
+# @csrf_exempt
+# def edit(request, eventId):
+#     Event.objects.filter(id = int(eventId)).update(
+#         started_time = request.POST.get('started_time'),
+#         closed_time = request.POST.get('closed_time')        
+#     )
+#     return JsonResponse({'success': True})
 
 
 def detail(request, eventId):
@@ -165,11 +163,6 @@ def checkout(request, eventId):
         event_id = eventId,
         user_id = request.user.id
     )
-
-    event = Event.objects.get(id = eventId)
-    event.has_signed_count = event.has_signed_count + 1
-    event.save()
-
     return JsonResponse({'success': True})
 
 
@@ -189,6 +182,11 @@ def supplement(request, eventId):
         event_id = eventId,
         user_id = userId
     )
+
+    event = Event.objects.get(id = eventId)
+    event.has_signed_count = event.has_signed_count + 1
+    event.save()
+
     return HttpResponseRedirect('/sign/detail/%d' % eventId)
 
 

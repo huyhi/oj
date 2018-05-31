@@ -5,7 +5,7 @@ urlpatterns = [
     url(r'^teacher_sign$', views.teacher_index, name='sign.teacher.index'),
     url(r'^create$', views.create, name='sign.create'),
     url(r'^detail/(\d+)$', views.detail, name='sign.detail'),
-    url(r'^edit/(\d+)$', views.edit, name='sign.edit'),
+    # url(r'^edit/(\d+)$', views.edit, name='sign.edit'),
     url(r'^delete/(\d+)$', views.delete, name='sign.delete'),    
     url(r'^supplement/(\d+)$', views.supplement, name='sign.supplement'),    
 
