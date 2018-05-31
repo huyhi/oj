@@ -50,9 +50,9 @@
 <h3>
     <form class="form-inline" method="post" action="{% url 'sign.supplement' eventId %}">
         <div class="form-group">
-            <input type="text" class="form-control" id="studentId" name="studentId" placeholder="学号">
+            <input id="studentId" type="text" class="form-control" name="studentId" placeholder="学号">
         </div>
-        <button type="submit" class="btn btn-primary" id="supplement">补签</button>
+        <button id="supplement" class="btn btn-primary">补签</button>
     </form>
 </h3>
 
@@ -85,6 +85,25 @@
         $('#img-src').attr('src', '/static/' + $(this).attr('img-src'))
         $('#leave-cause').text(($(this).attr('cause')))
     });
+
+    $('#supplement').on('click', function(e){
+        e.preventDefault() //取消默认行为
+        let urlArr = window.location.pathname.split('/')
+        $.post('/sign/supplement/' + urlArr[urlArr.length - 1], {
+                studentId: $('#studentId').val()
+            }, function (result, statue) {
+                if (statue === 'success') {
+                    if (result.success) {
+                        alert('补签成功')
+                        location.reload()
+                    } else {
+                        alert(result.errMsg)
+                    }
+                } else {
+                    alert('服务器抽风了QAQ，程序员小哥哥维修中')
+                }
+            })
+    })
 </script>
 
 {% endblock %}

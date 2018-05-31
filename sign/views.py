@@ -129,7 +129,7 @@ def student_index(request):
         where now() between e.started_time and e.closed_time\
     ' % userId
     cursor.execute(ongoingSQL)
-    onGoing = list(map(lambda x: dict(zip(['id', 'name', 'startTime', 'closedTime'], x)), cursor.fetchall()))
+    onGoing = list(map(lambda x: dict(zip(['id', 'name', 'position', 'startTime', 'closedTime'], x)), cursor.fetchall()))
     onGoing = onGoing[0] if onGoing else []
 
     checkedSQL = '\
@@ -155,6 +155,9 @@ def student_index(request):
 def checkout(request, eventId):
     eventId = int(eventId)
 
+    if Sign.objects.filter(event_id = eventId, user_id = request.user.id):
+        return JsonResponse({'success': False, 'errMsg': 'You have already sign'})
+
     event = Event.objects.get(id = eventId)
     event.has_signed_count = event.has_signed_count + 1
     event.save()
@@ -176,7 +179,7 @@ def supplement(request, eventId):
     try:
         userId = MyUser.objects.get(id_num = studentId).id        
     except:
-        return JsonResponse({'success': False, 'code': 404, 'msg': 'can not find user by studentId'})
+        return JsonResponse({'success': False, 'code': 404, 'errMsg': 'can not find user by studentId'})
 
     Sign.objects.create(
         event_id = eventId,
@@ -187,7 +190,7 @@ def supplement(request, eventId):
     event.has_signed_count = event.has_signed_count + 1
     event.save()
 
-    return HttpResponseRedirect('/sign/detail/%d' % eventId)
+    return JsonResponse({'success': True})
 
 
 @csrf_exempt
@@ -200,7 +203,7 @@ def leave(request, eventId):
     #检测文件后缀名和 MINE 格式
     #暂时还不知道 怎么判断上传文件的 MINE 类型，目前只根据后缀检查一下
     if os.path.splitext(fileObj.name)[1].lower() not in ('.jpg', '.jpeg', '.png'):
-        return JsonResponse({'success': False, 'code': 510, 'msg': 'upload file can only be .jpg .jpeg .png'})
+        return JsonResponse({'success': False, 'state': 0, 'msg': 'upload file can only be .jpg .jpeg .png'})
 
     date = datetime.now().strftime('%Y/%m/%d/').split('/')
     pathdir = os.path.join(BASE_DIR, 'static', 'pic', date[0], date[1], date[2])
@@ -226,4 +229,4 @@ def leave(request, eventId):
         cause = request.POST.get('cause')
     )
 
-    return JsonResponse({'success': True, 'path': os.path.splitext(fileObj.name)})
+    return JsonResponse({'success': True, 'state': 1, 'path': os.path.splitext(fileObj.name)})
