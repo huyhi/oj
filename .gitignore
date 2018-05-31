@@ -6,3 +6,5 @@ onlineTest/settings.py
 .idea/
 .DS_Store/
 django_uwsgi.ini
+static/pic
+static/pic/*

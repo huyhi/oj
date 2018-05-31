@@ -1,47 +1,139 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} 
 
-{% block title %}
-    我的作业列表
-{% endblock %}
+{% block title %} 我的作业列表 {% endblock %} 
 
-{% block extrahead %}
-    {% load static %}
-    <script src="{% static 'assets/js/bootstrap-table.min.js' %}"></script>
-    <link href="{% static 'assets/css/bootstrap-table.min.css' %}" rel="stylesheet">
-    <script src="{% static 'assets/js/bootstrap-table-zh-CN.min.js' %}"></script>
-{% endblock %}
+{% block extrahead %} 
+
+{% load static %}
+<style>
+    .data_input {
+        height: 34px;
+        border: 1px solid #e1e1e1;
+        border-radius: 5px;
+    }
+</style>
+<link href="{% static 'assets/css/bootstrap-table.min.css' %}" rel="stylesheet">
+<script src="{% static 'assets/js/bootstrap-table.min.js' %}"></script>
+<script src="{% static 'assets/js/bootstrap-table-zh-CN.min.js' %}"></script> 
+{% endblock %} 
+
 
 {% block content %}
-    <ol class="breadcrumb">
-        <li><a href="{% url 'index' %}">主页</a></li>
-        <li class="active">签到管理</li>
-        <li class="active">布置签到</li>
-    </ol>
+<div id="allmap"></div>
+<ol class="breadcrumb">
+    <li>
+        <a href="{% url 'index' %}">主页</a>
+    </li>
+    <li class="active">签到管理</li>
+    <li class="active">布置签到</li>
+</ol>
 
-    <h1>我布置的签到</h1>
+<h1>签到布置</h1>
 
-    <div class="table-responsive">
-        <table class="table">
-            <tr>
-                <th>课程名称</th>
-                <th>签到人数</th>
-                <th>全部人数</th>
-                <th>开始时间</th>
-                <th>结束时间</th>
-                <th>操作</th>
-            </tr>
+<!-- Button trigger modal -->
+<button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#modal">
+    布置签到
+</button>
 
-            {% for i in data %}
-                <tr>
-                    <th>{{ i.banji__name }}</th>
-                    <th>{{ i.has_signed_count }}</th>
-                    <th>{{ i.all_student_count }}</th>
-                    <th>{{ i.started_time }}</th>
-                    <th>{{ i.closed_time }}</th>
-                    <th>edit, more, delete</th>
-                </tr>
-            {% endfor %}
-
-        </table>
+<!-- Modal -->
+<div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-head">
+                <h2>布置签到</h2>
+            </div>
+            <div class="modal-body">
+                <form class="row" method="post" action="{% url 'sign.create' %}">
+                    <div class="form-group">
+                        <select class="form-control" name="banjiId">
+                            {% for i in classes %}
+                            <option id="banjiId" value="{{ i.banjiId }}">{{ i.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+    
+                    <div class="form-group">
+                        <input id="startedTime" type="datetime-local" class="data_input" name="startedTime">
+                    </div>
+    
+                    <div class="form-group">
+                        <input id="closedTime" type="datetime-local" class="data_input" name="closedTime">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button id="sub-btn" type="button" class="btn btn-primary">布置</button>
+            </div>
+        </div>
     </div>
-{% endblock %}
+</div>
+
+<h1>我布置的签到</h1>
+
+<div class="table-responsive">
+    <table class="table">
+        <tr>
+            <th>课程名称</th>
+            <th>签到人数</th>
+            <th>全部人数</th>
+            <th>开始时间</th>
+            <th>结束时间</th>
+            <th>操作</th>
+        </tr>
+
+        {% for i in data %}
+        <tr>
+            <th>{{ i.banji__name }}</th>
+            <th>{{ i.has_signed_count }}</th>
+            <th>{{ i.all_student_count }}</th>
+            <th>{{ i.started_time }}</th>
+            <th>{{ i.closed_time }}</th>
+            <th>
+                <a href="{% url 'sign.detail' i.id %}">详细</a>
+                <a href="{% url 'sign.edit' i.id %}">编辑</a>
+                <a href="{% url 'sign.delete' i.id %}">删除</a>
+            </th>
+        </tr>
+        {% endfor %}
+
+    </table>
+</div>
+
+<script>
+    let geolocation = new BMap.Geolocation();
+    let geoJson = '';
+    geolocation.getCurrentPosition(function (r) {
+        if (this.getStatus() == BMAP_STATUS_SUCCESS) {
+            geoJson = `[${r.point.lng},${r.point.lat}]`
+            console.log('Your Position: ' + r.point.lng + ',' + r.point.lat);
+        } else {
+            alert('failed' + this.getStatus());
+        }
+    })
+
+    $('#sub-btn').on('click', function () {
+        if (!geoJson) {
+            alert('get location failed, try later ')
+            return
+        } else {
+            $.post('/sign/create', {
+                position: geoJson,
+                startedTime: $('#startedTime').val(),
+                closedTime: $('#closedTime').val(),
+                banjiId: $('#banjiId').val(),
+            }, function (result, statue) {
+                if (statue === 'success') {
+                    if (result.success) {
+                        alert('布置成功')
+                        location.reload()
+                    } else {
+                        alert(result.errMsg)
+                    }
+                } else {
+                    console.log('服务器抽风了QAQ，程序员小哥哥维修中')
+                }
+            })
+        }
+    });
+</script> {% endblock %}

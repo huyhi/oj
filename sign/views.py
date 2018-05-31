@@ -1,5 +1,5 @@
 import os.path, uuid
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from django.db import connection
 from django.db.models import Count
 from sign.models import Event, Sign, Leave
@@ -16,13 +16,20 @@ def teacher_index(request):
     user = request.user
 
     if request.method == 'GET' and user.is_admin:    
-        page = int(request.GET.get('page', 1))
 
+        cursor = connection.cursor()
+        classesSql = 'select id, name\
+            from work_banji \
+            where teacher_id = %d' % user.id
+        cursor.execute(classesSql)
+        classes = list(map(lambda x: dict(zip(['banjiId', 'name'], x)), cursor.fetchall()))
+        
+        page = int(request.GET.get('page', 1))
+        
         signList = Event.objects.all().filter(teacher_id = user.id).prefetch_related('banji').values(
-            'has_signed_count', 'all_student_count', 'created_time', 'started_time', 'closed_time', 'banji__name'
+            'id', 'has_signed_count', 'all_student_count', 'created_time', 'started_time', 'closed_time', 'banji__name'
         )
 
-        # @10 items per page, use query params page
         perPage = Paginator(signList, 10)     
         try:
             data = perPage.page(page)   
@@ -30,7 +37,8 @@ def teacher_index(request):
             data = perPage.page(perPage.num_pages)
 
         return render(request, "sign_teacher_index.html", {
-            'data': data
+            'data': data,
+            'classes': classes
         })
 
 
@@ -61,13 +69,10 @@ def create(request):
             banji_id = banjiId,
             teacher_id = user.id
         )
-
         return JsonResponse({'success': True})
     else:
         return JsonResponse({
-            'success': False,
-            'errMsg': 'Permission denied'
-        })
+            'success': False, 'errMsg': 'Permission denied'})
 
 
 @csrf_exempt
@@ -100,7 +105,8 @@ def detail(request, eventId):
         data = perPage.page(perPage.num_pages)
 
     return render(request, "sign_detail.html", {
-        'data': data
+        'data': data,
+        'eventId': eventId
     })
 
 
@@ -111,7 +117,7 @@ def student_index(request):
     cursor = connection.cursor()
 
     ongoingSQL = '\
-        select e.id, tmp.name, e.started_time, e.closed_time\
+        select e.id, tmp.name, e.position, e.started_time, e.closed_time\
         from sign_event AS e\
         join \
         (\
@@ -125,7 +131,8 @@ def student_index(request):
         where now() between e.started_time and e.closed_time\
     ' % userId
     cursor.execute(ongoingSQL)
-    onGoing = list(map(lambda x: dict(zip(['id', 'name', 'startTime', 'closedTime'], x)), cursor.fetchall()))[0]
+    onGoing = list(map(lambda x: dict(zip(['id', 'name', 'startTime', 'closedTime'], x)), cursor.fetchall()))
+    onGoing = onGoing[0] if onGoing else []
 
     checkedSQL = '\
         select bj.name, s.created_time\
@@ -158,6 +165,11 @@ def checkout(request, eventId):
         event_id = eventId,
         user_id = request.user.id
     )
+
+    event = Event.objects.get(id = eventId)
+    event.has_signed_count = event.has_signed_count + 1
+    event.save()
+
     return JsonResponse({'success': True})
 
 
@@ -167,17 +179,17 @@ def checkout(request, eventId):
 def supplement(request, eventId):
     eventId = int(eventId)
     studentId = request.POST.get('studentId')
-
+    
     try:
-        userObj = MyUser.objects.get(id_num = studentId)
+        userId = MyUser.objects.get(id_num = studentId).id        
     except:
         return JsonResponse({'success': False, 'code': 404, 'msg': 'can not find user by studentId'})
 
     Sign.objects.create(
         event_id = eventId,
-        user_id = studentId
+        user_id = userId
     )
-    return JsonResponse({'success': True})
+    return HttpResponseRedirect('/sign/detail/%d' % eventId)
 
 
 @csrf_exempt
@@ -188,9 +200,8 @@ def leave(request, eventId):
     fileObj = request.FILES.get('leaveAsk')
 
     #检测文件后缀名和 MINE 格式
-    #TODO
     #暂时还不知道 怎么判断上传文件的 MINE 类型，目前只根据后缀检查一下
-    if os.path.splitext(fileObj.name)[1].lower() not in ('.jpg', '.jpeg', 'png'):
+    if os.path.splitext(fileObj.name)[1].lower() not in ('.jpg', '.jpeg', '.png'):
         return JsonResponse({'success': False, 'code': 510, 'msg': 'upload file can only be .jpg .jpeg .png'})
 
     date = datetime.now().strftime('%Y/%m/%d/').split('/')

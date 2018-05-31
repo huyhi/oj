@@ -13,7 +13,8 @@
 
 {% block content %}
     {% if onGoing %}
-        正在进行中
+        <h1> 正在进行中 </h1>
+
         <div class="table-responsive">
             <table class="table">
                 <tr>
@@ -24,6 +25,7 @@
 
                 <tr>
                     <th>{{ onGoing.name }}</th>
+                    <th>{{ onGoing.position }}</th>                    
                     <th>{{ onGoing.startTime }}</th>
                     <th>{{ onGoing.closedTime }}</th>
                 </tr>
@@ -31,11 +33,11 @@
             </table>
         </div>
     {% else %}
-        暂时没有正在进行中的签到
+        <h1> 暂时没有正在进行中的签到 </h1>
     {% endif %}
 
 
-    签到记录
+    <h3>签到记录</h3>
     <div class="table-responsive">
         <table class="table">
             <tr>
@@ -44,8 +46,10 @@
             </tr>
 
             {% for i in checked %}
-                <th>{{ i.name }}</th>
-                <th>{{ i.createdTime }}</th>                   
+                <tr>
+                    <th>{{ i.name }}</th>
+                    <th>{{ i.createdTime }}</th>    
+                </tr>               
             {% endfor %}
         </table>
     </div>
