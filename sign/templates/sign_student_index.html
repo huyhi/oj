@@ -12,13 +12,16 @@
 {% endblock %}
 
 {% block content %}
+    <ol class="breadcrumb">
+        <li><a href="{% url 'index' %}">主页</a></li>
+        <li class="active">签到管理</li>
+        <li class="active">我的签到</li>
+    </ol>
+
     {% if onGoing %}
         <h1> 正在进行中 </h1>
-
-        <div id="positionGet">{{ onGoing.position }}</div>
-        <div id="idGet">{{ onGoing.id }}</div>
-        <div>注释：django 从后端返回的两个必要的值，position 用来判断位置，eventId 拼接请求字符串， /sign/checkout/{eventId}</div>
-        
+        <div id="positionGet" hidden>{{ onGoing.position }}</div>
+        <div id="idGet" hidden>{{ onGoing.id }}</div>
 
         <div class="table-responsive">
             <table class="table">
@@ -41,6 +44,20 @@
     {% endif %}
 
 
+    <div class="attend">
+        <div id="allmap"></div>
+        <h3>签到</h3>
+        <button id="attend" class="btn btn-primary" type="submit" onclick="attendance()">签到</button>
+        
+        <h3>请假</h3>
+
+        <input id="file_input" type="file">
+        <img id="result"></img>
+        <input id="message" type="text" class="form-control" placeholder="请输入你的请假理由">
+        <button id="sub-btn" type="submit" class="btn btn-info">请假</button>
+    </div>
+
+
     <h3>签到记录</h3>
     <div class="table-responsive">
         <table class="table">
@@ -56,29 +73,6 @@
                 </tr>               
             {% endfor %}
         </table>
-    </div>
-
-
-    <ol class="breadcrumb">
-        <li><a href="{% url 'index' %}">主页</a></li>
-        <li class="active">签到管理</li>
-        <li class="active">我的签到</li>
-    </ol>
-
-    <div class="attend">
-        <div id="allmap"></div>
-        <h3>签到</h3>
-        <button class="btn btn-primary" type="submit" onclick="attendance" id="attend">签到</button>
-        
-        <h3>请假</h3>
-
-        <!-- <form action="" method="post" enctype="multipart/form-data">
-            {% csrf_token %}             -->
-            <input  id="file_input" type="file">
-            <img id="result"></img>
-            <input  id="message" type="text" class="form-control" placeholder="请输入你的请假理由">
-            <button id="sub-btn" type="submit" class="btn btn-info">请假</button>
-        <!-- </form> -->
     </div>
     
 <script>
@@ -118,16 +112,14 @@
         const url = '/sign/checkout/' + eventId
         if (lengthNow === undefined) {
             alert("获取地理位置失败，请在数秒后重试。")
-        } else if (lengthNow >= 500) {
+        } else if (lengthNow >= 200) {
             alert("签到失败（不在指定位置）")
-        } else if (lengthNow < 500) {
+        } else if (lengthNow < 200) {
             $.post(url, function (res, status) {
-                if (statue === 'success') {
+                if (status === 'success') {
                     if (res.success) {
                         alert("签到成功")
-                        $(document).ready(function () {
-                            $("#attend").text("已签到").attr("disabled", "disabled")
-                        })
+                        location.reload()
                     } else {
                         alert("签到失败，你已经完成签到，无需重复签到")
                     }
@@ -166,13 +158,14 @@
         }else {
             let formData = new FormData();
             formData.append('cause', $('#message').val());
-            formData.append('leaveAsk', $('#file_input')[0].files[0]);
+            formData.append('leaveAsk', $('#file_input').prop('files')[0]);
 
             $.ajax({
                 url: '/sign/leave/' + eventId, 
                 type: 'POST',
                 data: formData,
-                contentType: false
+                contentType: false,
+                processData: false
             }).done(function (result, statue) {
                 if (statue === 'success') {
                     if (result.success) {
@@ -188,33 +181,5 @@
 
         }
     })
-
-
-    // function addMessage() {
-    //     const url = '/sign/leave/' + eventId
-    //     const message = $('#message').val()
-    //     const formData = {
-    //         cause: message,
-            
-    //     }
-    //     if (message === '' || result.attr('src') === undefined) {
-    //         alert("请完善理由或选择假条")
-    //     } else {
-    //         $.ajax({
-    //             type: 'POST',
-    //             url: url,
-    //             data: formData,
-    //             success: function(res) {
-    //                 console.log(res)
-    //                 if (res.success) {
-    //                     alert('请假成功')
-    //                 } else {
-    //                     alert('请假失败')
-    //                 }
-    //             }
-    //         })
-    //     }
-    // }
-
 </script>
 {% endblock %}

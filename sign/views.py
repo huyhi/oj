@@ -198,8 +198,10 @@ def leave(request, eventId):
     userId = request.user.id
     eventId = int(eventId)
 
-    fileObj = request.FILES.get('leaveAsk')
+    if Sign.objects.filter(event_id = eventId, user_id = userId):
+        return JsonResponse({'success': False, 'errMsg': 'You have already sign'})
 
+    fileObj = request.FILES.get('leaveAsk')
     #检测文件后缀名和 MINE 格式
     #暂时还不知道 怎么判断上传文件的 MINE 类型，目前只根据后缀检查一下
     if os.path.splitext(fileObj.name)[1].lower() not in ('.jpg', '.jpeg', '.png'):
