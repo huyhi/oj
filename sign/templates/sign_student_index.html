@@ -47,7 +47,11 @@
     <div class="attend">
         <div id="allmap"></div>
         <h3>签到</h3>
-        <button id="attend" class="btn btn-primary" type="submit" onclick="attendance()">签到</button>
+        <button id="attend" class="btn btn-primary" type="submit" onclick="attendance()"
+            {% if not onGoing %}
+                disabled="disabled"
+            {% endif %}
+        >签到</button>
         
         <h3>请假</h3>
 
@@ -76,6 +80,9 @@
     </div>
     
 <script>
+    $("#sign_student_manage").addClass("active");
+    $("#sign_user_manage").css("display", 'block');
+    $("#sign_manage").addClass("active");
     const map = new BMap.Map("allmap")
     map.centerAndZoom("南京", 15) //初始化地图,设置城市和地图级别。
     const positionGet = JSON.parse($('#positionGet').text())
@@ -121,7 +128,7 @@
                         alert("签到成功")
                         location.reload()
                     } else {
-                        alert("签到失败，你已经完成签到，无需重复签到")
+                        alert(res.errMsg)
                     }
                 } else {
                     alert('服务器抽风了QAQ，程序员小哥哥维修中')
@@ -169,7 +176,7 @@
             }).done(function (result, statue) {
                 if (statue === 'success') {
                     if (result.success) {
-                        alert('成功')
+                        alert('假条已提交')
                         location.reload()
                     } else {
                         alert(result.errMsg)

@@ -2,7 +2,7 @@
 
 {% block title %} 
 
-我的作业列表 
+我的签到列表
 
 {% endblock %} 
 
@@ -19,7 +19,7 @@
 <ol class="breadcrumb">
     <li>
         <a href="{% url 'index' %}">主页</a>
-    </li>
+    </li >
     <li class="active">签到管理</li>
     <li class="active">查看详情</li>
 </ol>
@@ -38,7 +38,9 @@
             </div>
             <div class="modal-body">
                 <h4 id="leave-cause"></h4>
-                <center> <img id="img-src"> </center>
+                <div class="col-sm-12"> 
+                    <img id="img-src">
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -70,7 +72,7 @@
                 <th>{{ i.created_time }}</th>
                 {% if i.leave__cause %}
                     <th>
-                        <button id="btn-show" img-src="{{ i.leave__path }}" cause="{{ i.leave__cause }}" type="button" class="btn btn-primary  btn-sm" data-toggle="modal" data-target="#modal">查看</button>
+                        <button id="{{ i.id }}" img-src="{{ i.leave__path }}" cause="{{ i.leave__cause }}" type="button" class="btn btn-primary  btn-sm" data-toggle="modal" data-target="#modal" onclick="showDetail( {{ i.id }} )">查看</button>
                     </th>
                 {% else %}
                     <th>无</th>
@@ -81,11 +83,11 @@
 </div>
 
 <script>
-    $('#btn-show').on('click', function(){
-        $('#img-src').attr('src', '/static/' + $(this).attr('img-src'))
-        $('#leave-cause').text(($(this).attr('cause')))
-    });
-
+    const showDetail = function (id) {
+        $('#img-src').attr('src', '/static/' + $('#'+id).attr('img-src'))
+        $('#leave-cause').text(($('#'+id).attr('cause')))
+    }
+    
     $('#supplement').on('click', function(e){
         e.preventDefault() //取消默认行为
         let urlArr = window.location.pathname.split('/')

@@ -29,7 +29,8 @@ class Event(models.Model):
 class Sign(models.Model):
     event = models.ForeignKey(Event, on_delete = models.CASCADE)
     user = models.ForeignKey(MyUser, on_delete = models.CASCADE)
-    status = models.SmallIntegerField(default = 0, editable = False)
+    type_of = models.SmallIntegerField(default = 0, editable = False)   #该字段标记签到类型，0代表正常签到，1代表请假
+    is_checked = models.SmallIntegerField()   #该字段标记签到类型，1代表通过，0代表不通过
     created_time = models.DateTimeField(auto_now = True)
 
 

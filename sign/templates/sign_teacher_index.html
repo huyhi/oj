@@ -51,9 +51,9 @@
             <div class="modal-body">
                 <form class="row" method="post" action="{% url 'sign.create' %}">
                     <div class="form-group col-sm-12">
-                        <select class="form-control" name="banjiId">
+                        <select id="class-list" class="form-control" name="banjiId">
                             {% for i in classes %}
-                            <option id="banjiId" value="{{ i.banjiId }}">{{ i.name }}</option>
+                                <option id="banjiId" value="{{ i.banjiId }}">{{ i.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -123,6 +123,9 @@
 </div>
 
 <script>
+    $("#sign_teacher_manage").addClass("active");
+    $("#sign_user_manage").css("display", 'block');
+    $("#sign_manage").addClass("active");
     $(function () {
         $('#datetimepicker1').datetimepicker(
             {
@@ -169,7 +172,7 @@
                 position: geoJson,
                 startedTime: $('#startedTime').val(),
                 closedTime: $('#closedTime').val(),
-                banjiId: $('#banjiId').val(),
+                banjiId: $('#class-list option:selected').val(),
             }, function (result, statue) {
                 if (statue === 'success') {
                     if (result.success) {

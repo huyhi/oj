@@ -79,20 +79,11 @@ def delete(request, eventId):
     return JsonResponse({'success': True})
 
 
-# @csrf_exempt
-# def edit(request, eventId):
-#     Event.objects.filter(id = int(eventId)).update(
-#         started_time = request.POST.get('started_time'),
-#         closed_time = request.POST.get('closed_time')        
-#     )
-#     return JsonResponse({'success': True})
-
-
 def detail(request, eventId):
     page = int(request.GET.get('page', 1))
 
     studentsList = Sign.objects.filter(event = eventId).prefetch_related('user', 'leave').values(
-        'user__username', 'created_time', 'leave__cause', 'leave__path'
+        'id', 'user__username', 'created_time', 'leave__cause', 'leave__path'
     )
 
     # @10 items per page, use query params page
@@ -106,7 +97,6 @@ def detail(request, eventId):
         'data': data,
         'eventId': eventId
     })
-
 
 
 #感觉 Django 的 orm 模型很别扭，不习惯
@@ -218,11 +208,7 @@ def leave(request, eventId):
         f.write(chunk)
     f.close()
 
-    event = Event.objects.get(id = eventId)
-    event.has_signed_count = event.has_signed_count + 1
-    event.save()
-
-    signObj = Sign(event_id = eventId, user_id = userId, status = 1)
+    signObj = Sign(event_id = eventId, user_id = userId, type_of = 1, is_checked = 1)
     signObj.save()
 
     Leave.objects.create(
