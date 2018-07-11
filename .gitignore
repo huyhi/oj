@@ -9,3 +9,4 @@ onlineTest/settings.py
 django_uwsgi.ini
 static/pic
 static/pic/*
+*.pyc
