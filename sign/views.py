@@ -23,33 +23,16 @@ def teacher_index(request):
         cursor.execute(classesSql)
         classes = list(map(lambda x: dict(zip(['banjiId', 'name'], x)), cursor.fetchall()))
         
-        page = int(request.GET.get('page', 1))
-        
         signList = Event.objects.all().filter(teacher_id = user.id).prefetch_related('banji').values(
             'id', 'has_signed_count', 'all_student_count', 'created_time', 'started_time', 'closed_time', 'banji__name'
         )
 
-        perPage = Paginator(signList, 10)     
-        try:
-            data = perPage.page(page)   
-        except EmptyPage:
-            data = perPage.page(perPage.num_pages)
-
         return render(request, "sign_teacher_index.html", {
-            'data': data,
+            'data': signList,
             'classes': classes
         })
 
 
-"""
-教师创建点名的路由 Http Method POST
-必要参数：banji_id，position详细信息
-可选参数：started_time，预约点名开始的时间，如不填则默认现在
-TODO
-！安全隐患！
-需要增加用户验证的中间件。。。。具体怎么在Django实现我还在查看文档。。。。
-由于测试方便，这里暂时禁用了CSRF，后续需要启用CSRF防御机制
-"""
 @csrf_exempt
 def create(request):
     user = request.user
@@ -80,21 +63,25 @@ def delete(request, eventId):
 
 
 def detail(request, eventId):
-    page = int(request.GET.get('page', 1))
+    cursor = connection.cursor()
 
-    studentsList = Sign.objects.filter(event = eventId).prefetch_related('user', 'leave').values(
-        'id', 'user__username', 'created_time', 'leave__cause', 'leave__path'
-    )
+    sql = '\
+        SELECT s.id, u.username, s.type_of, s.is_checked, s.created_time, sl.cause, sl.path\
+            FROM work_banji_students AS bj_stu\
+                INNER JOIN auth_system_myuser AS u\
+                ON u.id = bj_stu.myuser_id\
+                LEFT JOIN sign_sign AS s\
+                ON u.id = s.user_id and bj_stu.banji_id = (\
+                    SELECT banji_id FROM sign_event WHERE id = %d\
+                )\
+                LEFT JOIN sign_leave AS sl\
+                ON s.id = sl.sign_id' % int(eventId)
 
-    # @10 items per page, use query params page
-    perPage = Paginator(studentsList, 10)     
-    try:
-        data = perPage.page(page)   
-    except EmptyPage:
-        data = perPage.page(perPage.num_pages)
+    cursor.execute(sql)
+    studentsList = list(map(lambda x: dict(zip(['id', 'username', 'type_of', 'is_checked', 'created_time', 'cause', 'path'], x)), cursor.fetchall()))
 
     return render(request, "sign_detail.html", {
-        'data': data,
+        'data': studentsList,
         'eventId': eventId
     })
 
@@ -154,7 +141,9 @@ def checkout(request, eventId):
 
     Sign.objects.create(
         event_id = eventId,
-        user_id = request.user.id
+        user_id = request.user.id,
+        type_of = 0,
+        is_checked = 1
     )
     return JsonResponse({'success': True})
 
@@ -173,7 +162,9 @@ def supplement(request, eventId):
 
     Sign.objects.create(
         event_id = eventId,
-        user_id = userId
+        user_id = userId,
+        type_of = 0,
+        is_checked = 1
     )
 
     event = Event.objects.get(id = eventId)
@@ -208,7 +199,7 @@ def leave(request, eventId):
         f.write(chunk)
     f.close()
 
-    signObj = Sign(event_id = eventId, user_id = userId, type_of = 1, is_checked = 1)
+    signObj = Sign(event_id = eventId, user_id = userId, type_of = 1, is_checked = 0)
     signObj.save()
 
     Leave.objects.create(
@@ -218,3 +209,44 @@ def leave(request, eventId):
     )
 
     return JsonResponse({'success': True, 'state': 1, 'path': os.path.splitext(fileObj.name)})
+
+
+@csrf_exempt
+def accept (request, signId):
+    sign = Sign.objects.get(id = signId)
+    sign.is_checked = 1
+
+    event = Event.objects.get(id = sign.event_id)
+    event.has_signed_count = event.has_signed_count + 1
+    
+    event.save()
+    sign.save()
+
+    cursor = connection.cursor()
+    sql = 'SELECT path FROM sign_leave WHERE sign_id = %d' % int(signId)
+    cursor.execute(sql)
+    lPath = cursor.fetchall()
+    os.remove(BASE_DIR + '/static/' + lPath[0][0])
+
+    sql = 'DELETE FROM sign_leave WHERE sign_id = %d' % int(signId)
+    cursor.execute(sql)
+
+    return JsonResponse({'success': True})
+
+
+@csrf_exempt
+def decline (request, signId):
+
+    cursor = connection.cursor()
+    sql = 'DELETE FROM sign_sign WHERE id = %d' % int(signId)
+    cursor.execute(sql)
+    
+    sql = 'SELECT path FROM sign_leave WHERE sign_id = %d' % int(signId)
+    cursor.execute(sql)
+    lPath = cursor.fetchall()
+    os.remove(BASE_DIR + '/static/' + lPath[0][0])
+
+    sql = 'DELETE FROM sign_leave WHERE sign_id = %d' % int(signId)
+    cursor.execute(sql)
+
+    return JsonResponse({'success': True})
