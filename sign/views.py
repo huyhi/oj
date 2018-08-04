@@ -2,7 +2,7 @@ import os.path, uuid
 from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from django.db import connection
 from django.db.models import Count
-from sign.models import Event, Sign, Leave
+from sign.models import Event, Sign, Leave, Record
 from auth_system.models import MyUser
 from work.models import BanJi
 from django.shortcuts import render
@@ -10,7 +10,8 @@ from django.core.paginator import Paginator, EmptyPage
 from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta
 from onlineTest.settings import BASE_DIR
-#1b6375220fb188cc0c637147a99225a00fd0c33f
+
+
 def teacher_index(request):
     user = request.user
 
@@ -89,7 +90,6 @@ def detail(request, eventId):
     })
 
 
-#感觉 Django 的 orm 模型很别扭，不习惯
 def student_index(request):
     userId = request.user.id
     cursor = connection.cursor()
@@ -138,6 +138,9 @@ def checkout(request, eventId):
     if Sign.objects.filter(event_id = eventId, user_id = request.user.id):
         return JsonResponse({'success': False, 'errMsg': 'You have already sign'})
 
+    if Record.objects.filter(event_id = eventId, address = request.POST.get('ipAddress')):
+        return JsonResponse({'success': False, 'errMsg': '签到无效，同一设备不可重复签到'})
+
     event = Event.objects.get(id = eventId)
     event.has_signed_count = event.has_signed_count + 1
     event.save()
@@ -148,6 +151,12 @@ def checkout(request, eventId):
         type_of = 0,
         is_checked = 1
     )
+
+    Record.objects.create(
+        event_id = eventId,
+        address = request.POST.get('ipAddress')
+    )
+
     return JsonResponse({'success': True})
 
 
@@ -253,3 +262,7 @@ def decline (request, signId):
     cursor.execute(sql)
 
     return JsonResponse({'success': True})
+
+
+def setAddress (request, signId, userId, address):
+    pass
